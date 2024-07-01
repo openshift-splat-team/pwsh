@@ -1,11 +1,19 @@
-FROM registry.access.redhat.com/ubi9/ubi:9.4-1123
-RUN mkdir -p /usr/app/src
-WORKDIR /usr/app/src
-RUN curl -L -o powershell.tar.gz https://github.com/PowerShell/PowerShell/releases/download/v7.3.12/powershell-7.3.12-linux-x64.tar.gz
-COPY install-pwsh.sh .
-RUN dnf install -y libicu
-RUN ./install-pwsh.sh 
+FROM registry.access.redhat.com/ubi9/ubi:9.4-1123 as dependencies
+WORKDIR /go/src/github.com/openshift/installer
+COPY *.sh .
+RUN ./install-microsoft-deps.sh 
 
-# Install VMware plugin for powershell.  Create settings directory /output/.local/share/VMware/PowerCLI
-RUN pwsh -Command 'Install-Module VMware.PowerCLI -Force -Scope AllUsers' && \
-    pwsh -Command 'Install-Module -Name EPS -RequiredVersion 1.0 -Force -Scope AllUsers' 
+# FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.17 AS builder
+# WORKDIR /go/src/github.com/openshift/installer
+
+# # copy powershell and powerCLI dependencies
+# COPY --from=dependencies /opt/microsoft/powershell /opt/microsoft/powershell
+# COPY --from=dependencies /root/.local/share/powershell/Modules /root/.local/share/powershell/Modules
+# COPY --from=dependencies /usr/local/share/powershell/Modules /usr/local/share/powershell/Modules
+# RUN ln -s /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh
+
+# # copy azure-cli venv
+# COPY --from=dependencies /go/src/github.com/openshift/installer/env /go/src/github.com/openshift/installer/env
+# ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=true
+
+
